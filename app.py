@@ -1,45 +1,60 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 import streamlit as st
+from langchain.chat_models import ChatOpenAI
+from langchain.schema import SystemMessage, HumanMessage
+import os
 
-st.title("サンプルアプリ②: 少し複雑なWebアプリ")
+# OpenAI APIキーの設定（環境変数推奨）streamlit run app.py
+api_key = os.getenv("OPENAI_API_KEY")
 
-st.write("##### 動作モード1: 文字数カウント")
-st.write("入力フォームにテキストを入力し、「実行」ボタンを押すことで文字数をカウントできます。")
-st.write("##### 動作モード2: BMI値の計算")
-st.write("身長と体重を入力することで、肥満度を表す体型指数のBMI値を算出できます。")
+# LLM応答関数の定義
+def get_expert_response(user_input: str, expert_type: str) -> str:
+    # 専門家ごとのシステムメッセージ
+    system_messages = {
+        "栄養学の専門家": "あなたは栄養学の専門家です。健康、食事、栄養素に関する質問に専門的かつ分かりやすく答えてください。",
+        "金融の専門家": "あなたは金融の専門家です。投資、経済、資産運用に関する質問に専門的かつ分かりやすく答えてください。"
+    }
 
-selected_item = st.radio(
-    "動作モードを選択してください。",
-    ["文字数カウント", "BMI値の計算"]
-)
+    # Chatモデルの初期化
+    chat = ChatOpenAI(openai_api_key=api_key,model_name="gpt-3.5-turbo", temperature=0.7)
 
-st.divider()
+    # メッセージ構築
+    messages = [
+        SystemMessage(content=system_messages[expert_type]),
+        HumanMessage(content=user_input)
+    ]
 
-if selected_item == "文字数カウント":
-    input_message = st.text_input(label="文字数のカウント対象となるテキストを入力してください。")
-    text_count = len(input_message)
+    # 応答生成
+    response = chat(messages)
+    return response.content
 
-else:
-    height = st.text_input(label="身長（cm）を入力してください。")
-    weight = st.text_input(label="体重（kg）を入力してください。")
+# Streamlit UI
+st.set_page_config(page_title="専門家AIチャット", layout="centered")
 
-if st.button("実行"):
-    st.divider()
+st.title("専門家AIチャット")
+st.markdown("""
+このアプリでは、質問を入力し、回答してほしい専門家の種類を選ぶことで、AIがその分野の専門家として回答します。
 
-    if selected_item == "文字数カウント":
-        if input_message:
-            st.write(f"文字数: **{text_count}**")
+### 操作方法
+1. 下の入力欄に質問を入力してください。
+2. 専門家の種類を選択してください。
+3. 「送信」ボタンを押すと、AIが回答を表示します。
+""")
 
-        else:
-            st.error("カウント対象となるテキストを入力してから「実行」ボタンを押してください。")
+# 入力フォーム
+user_input = st.text_area("質問を入力してください", height=150)
+expert_type = st.radio("専門家の種類を選択", ["栄養学の専門家", "金融の専門家"])
 
+if st.button("送信"):
+    if user_input.strip() == "":
+        st.warning("質問を入力してください。")
     else:
-        if height and weight:
-            try:
-                bmi = round(int(weight) / ((int(height)/100) ** 2), 1)
-                st.write(f"BMI値: {bmi}")
-
-            except ValueError as e:
-                st.error("身長と体重は数値で入力してください。")
-
-        else:
-            st.error("身長と体重をどちらも入力してください。")
+        with st.spinner("AIが回答を生成中..."):
+            answer = get_expert_response(user_input, expert_type)
+            st.success("回答が生成されました")
+            st.markdown(f"**{expert_type}からの回答：**")
+            st.write(answer)
