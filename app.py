@@ -10,7 +10,7 @@ from langchain.schema import SystemMessage, HumanMessage
 import os
 
 # OpenAI APIキーの設定 streamlit run app.py
-api_key = st.secrets("OPENAI_API_KEY")
+api_key = st.secrets["OPENAI_API_KEY"]
 openai.api_key = api_key
 
 # LLM応答関数の定義
