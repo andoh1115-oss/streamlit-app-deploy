@@ -2,16 +2,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import openai
 
 import streamlit as st
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 import os
 
-# OpenAI APIキーの設定 streamlit run app.py
+# OpenAI APIキーの設定（環境変数推奨）streamlit run app.py
 api_key = os.getenv("OPENAI_API_KEY")
-openai.api_key = api_key
 
 # LLM応答関数の定義
 def get_expert_response(user_input: str, expert_type: str) -> str:
@@ -22,7 +20,7 @@ def get_expert_response(user_input: str, expert_type: str) -> str:
     }
 
     # Chatモデルの初期化
-    chat = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.7)
+    chat = ChatOpenAI(openai_api_key=api_key,model_name="gpt-3.5-turbo", temperature=0.7)
 
     # メッセージ構築
     messages = [
